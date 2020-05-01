@@ -116,3 +116,4 @@ function localDescCreated(desc) {
     () => sendMessage({'sdp': pc.localDescription}),
     onError
   );
+}
