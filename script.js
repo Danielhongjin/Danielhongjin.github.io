@@ -24,7 +24,7 @@ function onError(error) {
 };
 navigator.mediaDevices.getUserMedia({
     audio: true,
-    video: false,
+    video: true,
   }).then(stream => {
     console.log(stream);
     localStream = stream;
@@ -44,7 +44,7 @@ drone.on('open', error => {
   room.on('members', members => {
     console.log('MEMBERS', members);
     // If we are the second user to connect to the room we will be creating the offer
-    setTimeout(function(){ startWebRTC(members);}, 800);
+    setTimeout(function(){ startWebRTC(members);}, 2800);
   });
 });
 
