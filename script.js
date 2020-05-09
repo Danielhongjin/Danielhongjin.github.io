@@ -1,12 +1,8 @@
 // Generate random room name if needed
-if (!location.hash) {
-  location.hash = Math.floor(Math.random() * 0xFFFFFF).toString(16);
-}
 const roomHash = location.hash.substring(1);
-
-// TODO: Replace with your own channel ID
+console.log(roomHash);
+//Variables
 const drone = new ScaleDrone('BIZhUxYEmI9Hwh9I');
-// Room name needs to be prefixed with 'observable-'
 const roomName = 'observable-' + roomHash;
 const configuration = {
   iceServers: [{
@@ -14,21 +10,26 @@ const configuration = {
   }]
 };
 let room;
+let members;
 let pcs = [];
 let localStream;
+let finishedMedia = false;
 function onSuccess() {
   console.log("success");
 };
 function onError(error) {
   console.error(error);
 };
+//Gets the user video and audio streams
 navigator.mediaDevices.getUserMedia({
     audio: true,
     video: true,
   }).then(stream => {
     console.log(stream);
     localStream = stream;
-    localVideo.srcObject = stream;}, onError);
+    localVideo.srcObject = stream;
+    finishedMedia = true;
+}, onError);
 drone.on('open', error => {
   if (error) {
     return console.error(error);
@@ -41,12 +42,34 @@ drone.on('open', error => {
   });
   // We're connected to the room and received an array of 'members'
   // connected to the room (including us). Signaling server is ready.
-  room.on('members', members => {
-    console.log('MEMBERS', members);
-    // If we are the second user to connect to the room we will be creating the offer
-    setTimeout(function(){ startWebRTC(members);}, 2800);
+  room.on('members', memberList => {
+    console.log('MEMBERS', memberList);
+    members = memberList;
+    if (members.length > 4) {
+      window.location.href = window.location.href.substring(0, window.location.href - 14) + "home.html";
+    }
+    //Launches startWebRTC
+    waitForStreams();
   });
 });
+
+//Promise function that waits for user media to finish completely.
+function waitForStreams() {
+  if (finishedMedia == true) {
+      console.log("finished waiting for streams");
+      startWebRTC();
+   } else {
+     setTimeout(waitForStreams, 1000);
+   }
+  console.log("heyo");
+}
+
+function createOffer(pc) {
+  pc.onnegotiationneeded = () => {
+      console.log("sending offer");
+      setTimeout(function(){ pc.createOffer().then(event => localDescCreated(event, pc.id)).catch(onError); }, 500);
+    }
+}
 
 // Send signaling data via Scaledrone
 function sendMessage(message) {
@@ -55,11 +78,9 @@ function sendMessage(message) {
     message
   });
 }
-
-function startWebRTC(members) {
-  
-  console.log(localStream);
-  
+//Checks for other members in room and creates a new PeerConnection offer for each one.
+function startWebRTC() {
+  console.log(members);
   var i;
   for (i = 0; i < members.length; i++) {
     if (members[i].id !== drone.clientId) {
@@ -75,24 +96,35 @@ function startWebRTC(members) {
       localStream.getTracks().forEach(track => {
           newPc.pc.addTrack(track, localStream);
       });
-      newPc.pc.onnegotiationneeded = () => {
-       console.log("sending offer");
-       
-        setTimeout(function(){ newPc.pc.createOffer().then(event => localDescCreated(event, newPc.id)).catch(onError); }, 500);
-      }
+      newPc.pc.id = newPc.id;
+      createOffer(newPc.pc);
       
-      newPc.pc.ontrack = event => {
-        const stream = event.streams[0];
-        if (!remoteVideo.srcObject || remoteVideo.srcObject.id !== stream.id) {
-          remoteVideo.srcObject = stream;
-        }
-      };
+      
+      setOnTrack(newPc.pc);
       pcs.push(newPc);
       console.log(pcs);
     }
   }
 
-  
+  function setOnTrack(pc) {
+    pc.ontrack = event => {
+        var stream = event.streams[0];
+        console.log(remoteVideo);
+        console.log(stream);
+        if (remoteVideo.attribute != stream.id && remoteVideo1.attribute != stream.id && remoteVideo2.attribute != stream.id) {
+          if (!(remoteVideo.srcObject || remoteVideo.attribute === stream.id)) {
+            remoteVideo.srcObject = stream;
+            remoteVideo.attribute = stream.id;
+          } else if (!(remoteVideo1.srcObject || remoteVideo1.attribute === stream.id)) {
+            remoteVideo1.srcObject = stream;
+            remoteVideo1.attribute = stream.id;
+          } else if (!(remoteVideo2.srcObject || remoteVideo2.attribute === stream.id)) {
+            remoteVideo2.srcObject = stream;
+            remoteVideo2.attribute = stream.id;
+          }
+        }
+      };
+  }
 
   // Listen to signaling data from Scaledrone
   room.on('data', (message, client) => {
@@ -103,6 +135,7 @@ function startWebRTC(members) {
     }
     var i;
     console.log(JSON.stringify(message));
+    //message.sdp implies that an offer/answer is being received.
     if (message.sdp) {
       var n = -1;
       for (i = 0; i < pcs.length; i++) {
@@ -112,7 +145,7 @@ function startWebRTC(members) {
         }
       }
       if (n == -1) {
-        
+        console.log("creating new pcs");
         var newPc = {pc: new RTCPeerConnection(configuration), id: client.id};
         newPc.pc.onicecandidate = event => {
           console.log("sending candidate");
@@ -124,17 +157,13 @@ function startWebRTC(members) {
           console.log("adding tracks");
           newPc.pc.addTrack(track, localStream);
         });
-        newPc.pc.ontrack = event => {
-          console.log("receiving track");
-          const stream = event.streams[0];
-          if (!remoteVideo.srcObject || remoteVideo.srcObject.id !== stream.id) {
-            remoteVideo.srcObject = stream;
-          }
-        };
+        setOnTrack(newPc.pc);
         pcs.push(newPc);
+        console.log(newPc)
         n = pcs.length - 1;
       }
       // This is called after receiving an offer or answer from another peer
+      if (message.target === drone.clientId) {
       pcs[n].pc.setRemoteDescription(new RTCSessionDescription(message.sdp), () => {
         // When receiving an offer lets answer it
         if (pcs[n].pc.remoteDescription.type === 'offer') {
@@ -146,6 +175,8 @@ function startWebRTC(members) {
           }
         }
       , onError);
+        }
+      //message.candidate implies an ICE candidate being sent
     } else if (message.candidate) {
       console.log("taking a candidate");
       var n = -1;
@@ -164,7 +195,7 @@ function startWebRTC(members) {
     }
   });
 }
-
+//Updates the local description for a PC sdp
 function localDescCreated(desc, id) {
   var n = -1;
   
@@ -174,12 +205,12 @@ function localDescCreated(desc, id) {
       break;
     }
   }
-  console.log("setting local description");
+  console.log(desc);
+  console.log("setting local description for " + id + ' ' + pcs[n].pc.localDescription);
   pcs[n].pc.setLocalDescription(
     desc,
-    () => sendMessage({'sdp': pcs[n].pc.localDescription}),
+    () => sendMessage({'sdp': pcs[n].pc.localDescription, 'target': id}),
     onError
   );
   
-  console.log(pcs[0]);
 }
