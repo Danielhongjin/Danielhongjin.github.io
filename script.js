@@ -1,3 +1,4 @@
+
 // Generate random room name if needed
 const roomHash = location.hash.substring(1);
 console.log(roomHash);
@@ -5,9 +6,16 @@ console.log(roomHash);
 const drone = new ScaleDrone('BIZhUxYEmI9Hwh9I');
 const roomName = 'observable-' + roomHash;
 const configuration = {
-  iceServers: [{
-    urls: 'stun:stun.l.google.com:19302'
-  }]
+  iceServers: [
+            {url : 'stun:stun.l.google.com:19302'},
+            {url : 'stun:stun.anyfirewall.com:3478'},
+            {url : 'turn:turn.bistri.com:80',
+                credential: 'homeo',
+                username: 'homeo'},
+            {url : 'turn:turn.anyfirewall.com:443?transport=tcp',
+                credential: 'webrtc',
+                username: 'webrtc'}
+        ]
 };
 let room;
 let members;
@@ -135,7 +143,7 @@ function startWebRTC() {
       return;
     }
     var i;
-    console.log(JSON.stringify(message));
+    console.log(JSON.stringify(message, null, 4));
     //message.sdp implies that an offer/answer is being received.
     if (message.sdp) {
       var n = -1;
@@ -215,4 +223,9 @@ function localDescCreated(desc, id) {
   );
   
 }
-  
+function showPcs() {
+  var b;
+  for (b = 0; b < pcs.length; b++) {
+    console.log(pcs[b]);
+  }
+}

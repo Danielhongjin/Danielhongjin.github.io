@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width">
   <style>
     body {
-      display: flex;
       height: 100vh;
       margin: 0;
       align-items: center;
@@ -15,7 +14,7 @@
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     }
     video {
-      max-width: calc(50% - 100px);
+      max-width: calc(50% - 150px);
       margin: 0 50px;
       box-sizing: border-box;
       border-radius: 2px;
@@ -30,14 +29,20 @@
       font-size: 16px;
       color: rgba(0, 0, 0, 0.5);
     }
+    button {
+      height: 5vh;
+      width: 10vh;
+    }
   </style>
 </head>
 <body>
-  <div class="copy">Send your URL to a friend to start a video call</div>
   <video id="localVideo" autoplay muted></video>
   <video id="remoteVideo" autoplay></video>
   <video id="remoteVideo1" autoplay></video>
   <video id="remoteVideo2" autoplay></video>
+
+  <button onclick="showPcs()" type="button">Click me for debugging fun</button>
   <script src="script.js"></script>
+  
 </body>
 </html>
