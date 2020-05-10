@@ -98,8 +98,6 @@ function startWebRTC() {
       });
       newPc.pc.id = newPc.id;
       createOffer(newPc.pc);
-      
-      
       setOnTrack(newPc.pc);
       pcs.push(newPc);
       console.log(pcs);
@@ -110,17 +108,20 @@ function startWebRTC() {
     pc.ontrack = event => {
         var stream = event.streams[0];
         console.log(remoteVideo);
-        console.log(stream);
+        console.log(JSON.stringify(stream.id));
         if (remoteVideo.attribute != stream.id && remoteVideo1.attribute != stream.id && remoteVideo2.attribute != stream.id) {
           if (!(remoteVideo.srcObject || remoteVideo.attribute === stream.id)) {
             remoteVideo.srcObject = stream;
             remoteVideo.attribute = stream.id;
+            console.log("adding to remoteVideo");
           } else if (!(remoteVideo1.srcObject || remoteVideo1.attribute === stream.id)) {
-            remoteVideo1.srcObject = stream;
+            remoteVideo1.srcObject = stream;  
             remoteVideo1.attribute = stream.id;
+            console.log("adding to remoteVideo1");
           } else if (!(remoteVideo2.srcObject || remoteVideo2.attribute === stream.id)) {
             remoteVideo2.srcObject = stream;
             remoteVideo2.attribute = stream.id;
+            console.log("adding to remoteVideo2");
           }
         }
       };
@@ -214,3 +215,4 @@ function localDescCreated(desc, id) {
   );
   
 }
+  
