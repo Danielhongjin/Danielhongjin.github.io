@@ -104,6 +104,7 @@ function startWebRTC() {
       newPc.pc.onicecandidate = event => {
         console.log("sending candidate");
         if (event.candidate) {
+          console.log(event.currentTarget.id);
           setTimeout(function(){ sendMessage({'candidate': event.candidate, 'id': drone.clientId, 'target': event.currentTarget.id}); }, 500);
         }
       };
@@ -165,6 +166,7 @@ function startWebRTC() {
         newPc.pc.onicecandidate = event => {
           console.log("sending candidate");
           if (event.candidate) {
+            console.log(event.currentTarget.id);
             setTimeout(function(){ sendMessage({'candidate': event.candidate, 'id': drone.clientId, 'target': event.currentTarget.id}); }, 500);
           }
         };
