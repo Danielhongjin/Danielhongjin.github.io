@@ -101,12 +101,10 @@ function startWebRTC() {
   for (i = 0; i < members.length; i++) {
     if (members[i].id !== drone.clientId) {
       var newPc = {pc: new RTCPeerConnection(configuration), id: members[i].id};
-      console.log(newPc);
-      
       newPc.pc.onicecandidate = event => {
         console.log("sending candidate");
         if (event.candidate) {
-          setTimeout(function(){ sendMessage({'candidate': event.candidate, 'id': drone.clientId}); }, 500);
+          setTimeout(function(){ sendMessage({'candidate': event.candidate, 'id': drone.clientId, 'target': event.currentTarget.id}); }, 500);
         }
       };
       localStream.getTracks().forEach(track => {
@@ -167,7 +165,7 @@ function startWebRTC() {
         newPc.pc.onicecandidate = event => {
           console.log("sending candidate");
           if (event.candidate) {
-            setTimeout(function(){ sendMessage({'candidate': event.candidate, 'id': drone.clientId}); }, 500);
+            setTimeout(function(){ sendMessage({'candidate': event.candidate, 'id': drone.clientId, 'target': event.currentTarget.id}); }, 500);
           }
         };
         localStream.getTracks().forEach(track => {
@@ -195,20 +193,22 @@ function startWebRTC() {
         }
       //message.candidate implies an ICE candidate being sent
     } else if (message.candidate) {
-      console.log("taking a candidate");
-      var n = -1;
-      console.log(pcs.length);
-      for (i = 0; i < pcs.length; i++) {
-        console.log(pcs[i].id);
-        if (pcs[i].id === client.id) {
-          n = i;
-          break;
+      if (message.target === drone.clientId) {
+        console.log("taking a candidate");
+        var n = -1;
+        console.log(pcs.length);
+        for (i = 0; i < pcs.length; i++) {
+          console.log(pcs[i].id);
+          if (pcs[i].id === client.id) {
+            n = i;
+            break;
+          }
         }
+        console.log(JSON.stringify(pcs[n]));
+        // Add the new ICE candidate to our connections remote description
+        pcs[n].pc.addIceCandidate(
+          new RTCIceCandidate(message.candidate), onSuccess, onError);
       }
-      console.log(JSON.stringify(pcs[n]));
-      // Add the new ICE candidate to our connections remote description
-      pcs[n].pc.addIceCandidate(
-        new RTCIceCandidate(message.candidate), onSuccess, onError);
     }
   });
 }
