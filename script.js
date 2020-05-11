@@ -105,7 +105,7 @@ function startWebRTC() {
         console.log("sending candidate");
         if (event.candidate) {
           console.log(event.currentTarget.id);
-          setTimeout(function(){ sendMessage({'candidate': event.candidate, 'id': drone.clientId, 'target': event.currentTarget.id}); }, 500);
+          setTimeout(function(){ sendMessage({'candidate': event.candidate, 'id': drone.clientId, 'target': event.currentTarget.id}); }, 1000);
         }
       };
       localStream.getTracks().forEach(track => {
@@ -167,13 +167,14 @@ function startWebRTC() {
           console.log("sending candidate");
           if (event.candidate) {
             console.log(event.currentTarget.id);
-            setTimeout(function(){ sendMessage({'candidate': event.candidate, 'id': drone.clientId, 'target': event.currentTarget.id}); }, 500);
+            setTimeout(function(){ sendMessage({'candidate': event.candidate, 'id': drone.clientId, 'target': event.currentTarget.id}); }, 1000);
           }
         };
         localStream.getTracks().forEach(track => {
           console.log("adding tracks");
           newPc.pc.addTrack(track, localStream);
         });
+        newPc.pc.id = newPc.id;
         setOnTrack(newPc.pc);
         pcs.push(newPc);
         console.log(newPc)
